@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:55 by jtu               #+#    #+#             */
-/*   Updated: 2024/02/23 16:35:08 by jtu              ###   ########.fr       */
+/*   Updated: 2024/02/27 12:56:48 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <unistd.h>
 # include <stdlib.h>
 # include <stdio.h>
+# include <fcntl.h>
 # include "libft/libft.h"
 
 
