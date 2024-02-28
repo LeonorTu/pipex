@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/02/28 15:54:10 by jtu              ###   ########.fr       */
+/*   Updated: 2024/02/28 20:09:54 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,8 @@ void	execute_cmd(char *argv, char **envp)
 	char	*path;
 
 	cmd = ft_split(argv, ' ');
+	// if (!cmd[0] || !cmd[1])
+	// 	error_exit();
 	path = parse_path(cmd[0], envp);
 	if (!path)
 	{
@@ -92,7 +94,7 @@ void	parent_process(char **argv, char **envp, int *fd)
 	dup2(fd[0], STDIN_FILENO);
 	dup2(fd_out, STDOUT_FILENO);
 	close(fd[1]);
-	close(fd[2]);
+	close(fd[0]);
 	execute_cmd(argv[3], envp);
 }
 
@@ -113,4 +115,7 @@ int	main(int argc, char **argv, char **envp)
 		child_process(argv, envp, fd);
 	waitpid(pid1, &status, 0);
 	parent_process(argv, envp, fd);
+	// sleep(100000000);
+	system("leaks pipex "); //
+	return (EXIT_SUCCESS);
 }
