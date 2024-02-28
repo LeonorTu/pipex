@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/02/27 16:52:27 by jtu              ###   ########.fr       */
+/*   Updated: 2024/02/28 15:54:10 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,7 @@ void	child_process(char **argv, char **envp, int *fd)
 	dup2(fd[1], STDOUT_FILENO);
 	dup2(fd_in, STDIN_FILENO);
 	close(fd[0]);
+	close(fd[1]);
 	execute_cmd(argv[2], envp);
 }
 
@@ -85,12 +86,13 @@ void	parent_process(char **argv, char **envp, int *fd)
 {
 	int	fd_out;
 
-	fd_out = open(argv[4], O_RDONLY);
+	fd_out = open(argv[4],  O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (fd_out == -1)
 		error_exit();
 	dup2(fd[0], STDIN_FILENO);
 	dup2(fd_out, STDOUT_FILENO);
 	close(fd[1]);
+	close(fd[2]);
 	execute_cmd(argv[3], envp);
 }
 
@@ -98,6 +100,7 @@ int	main(int argc, char **argv, char **envp)
 {
 	int		fd[2];
 	pid_t	pid1;
+	int	status;
 
 	if (argc != 5)
 		error_exit();
@@ -108,6 +111,6 @@ int	main(int argc, char **argv, char **envp)
 		error_exit();
 	if (pid1 == 0)
 		child_process(argv, envp, fd);
-	waitpid(pid1, NULL, 0);
+	waitpid(pid1, &status, 0);
 	parent_process(argv, envp, fd);
 }
