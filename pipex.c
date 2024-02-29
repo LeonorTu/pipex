@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/02/28 20:09:54 by jtu              ###   ########.fr       */
+/*   Updated: 2024/02/29 18:07:37 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,11 @@ char	*parse_path(char *cmd, char **envp)
 	int		i;
 
 	while (!ft_strnstr(*envp, "PATH=", 5))
+	{
 		envp++;
+		// if (!*envp)
+		// 	error_exit();    //????
+	}
 	path = ft_split(*envp + 5, ':');
 	i = 0;
 	temp = NULL;
@@ -57,10 +61,15 @@ void	execute_cmd(char *argv, char **envp)
 	char	**cmd;
 	char	*path;
 
-	cmd = ft_split(argv, ' ');
-	// if (!cmd[0] || !cmd[1])
-	// 	error_exit();
-	path = parse_path(cmd[0], envp);
+	if (!ft_strrchr(*cmd, '/'))
+	{
+		cmd = ft_split(argv, ' ');
+		if (!cmd[0])
+			error_exit();
+		path = parse_path(cmd[0], envp);
+	}
+	else
+		path = argv;
 	if (!path)
 	{
 		free_arr(cmd);
@@ -70,21 +79,23 @@ void	execute_cmd(char *argv, char **envp)
 		error_exit();
 }
 
-void	child_process(char **argv, char **envp, int *fd)
+void	child1_process(char **argv, char **envp, int *fd)
 {
 	int	fd_in;
 
+	// printf("%d\n", getpid());
+	// printf("%d\n", getppid());
 	fd_in = open(argv[1], O_RDONLY);
 	if (fd_in == -1)
 		error_exit();
 	dup2(fd[1], STDOUT_FILENO);
 	dup2(fd_in, STDIN_FILENO);
-	close(fd[0]);
 	close(fd[1]);
+	close(fd_in);
 	execute_cmd(argv[2], envp);
 }
 
-void	parent_process(char **argv, char **envp, int *fd)
+void	child2_process(char **argv, char **envp, int *fd)
 {
 	int	fd_out;
 
@@ -93,8 +104,8 @@ void	parent_process(char **argv, char **envp, int *fd)
 		error_exit();
 	dup2(fd[0], STDIN_FILENO);
 	dup2(fd_out, STDOUT_FILENO);
-	close(fd[1]);
 	close(fd[0]);
+	close(fd_out);
 	execute_cmd(argv[3], envp);
 }
 
@@ -102,7 +113,10 @@ int	main(int argc, char **argv, char **envp)
 {
 	int		fd[2];
 	pid_t	pid1;
-	int	status;
+	pid_t	pid2;
+	int	status1;
+	int	status2;
+	// int	statuscode;
 
 	if (argc != 5)
 		error_exit();
@@ -112,10 +126,31 @@ int	main(int argc, char **argv, char **envp)
 	if (pid1 < 0)
 		error_exit();
 	if (pid1 == 0)
-		child_process(argv, envp, fd);
-	waitpid(pid1, &status, 0);
-	parent_process(argv, envp, fd);
+		child1_process(argv, envp, fd);
+	close(fd[1]);
+	pid2 = fork();
+	if (pid2 < 0)
+		error_exit();
+	if (pid2 == 0)
+		child2_process(argv, envp, fd);
+	close(fd[0]);
+	waitpid(pid1, &status1, 0);
+	waitpid(pid2, &status2, 0);
+	// statuscode = 1;
+	// if (WIFEXITED(status1))
+	// 	statuscode = WEXITSTATUS(status1);
+	// else if (WIFSIGNALED(status1))
+	// 	statuscode = WTERMSIG(status1);
+	// else
+	// 	statuscode = 1;
+	// printf("%d\n", getpid());
+	// printf("%d\n", getppid());
+	// printf("here");
+	// while(1)
+	// {
+	// }
+	// parent_process(argv, envp, fd);
 	// sleep(100000000);
-	system("leaks pipex "); //
+	// system("leaks pipex"); //
 	return (EXIT_SUCCESS);
 }
