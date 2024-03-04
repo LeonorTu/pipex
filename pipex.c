@@ -6,61 +6,23 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/04 14:27:41 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/04 15:20:02 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-void	error_exit(t_error error, char *s)
-{
-	ft_putstr_fd("pipex: ", STDERR_FILENO);
-	if (error == CMD_NOT_FOUND)
-	{
-		ft_putstr_fd("command not found: ", STDERR_FILENO);
-		if (s)
-			ft_putendl_fd(s, STDERR_FILENO);
-		exit(127);
-	}
-	if (error == NO_PATH)
-	{
-		ft_putstr_fd("No such file or directory: ", STDERR_FILENO);
-		ft_putendl_fd(s, STDERR_FILENO);
-		exit(127);
-	}
-	if (error == EXECVE_FAIL)
-	{
-		ft_putstr_fd("permission denied: ", STDERR_FILENO);
-		ft_putendl_fd(s, STDERR_FILENO);
-		exit(126);
-	}
-	else
-	{
-		perror(s);
-		exit(EXIT_FAILURE);
-	}
-}
-
-void	free_arr(char **arr)
-{
-	while (*arr)
-		free(*arr++);
-	// free(arr);
-}
-
-char	*parse_path(char *cmd, char **envp, t_pipex *pipex)
+char	*parse_path(char *cmd, char **envp)
 {
 	char	**path;
 	char	*path_cmd;
 	char	*temp;
 	int		i;
 
-	while (!ft_strnstr(*envp, "PATH=", 5))
-	{
+	while (*envp && !ft_strnstr(*envp, "PATH=", 5))
 		envp++;
-		if (!*envp)
-			error_exit(NO_PATH, cmd);
-	}
+	if (!*envp)
+		error_exit(NO_PATH, cmd);
 	path = ft_split(*envp + 5, ':');
 	i = -1;
 	temp = NULL;
@@ -78,16 +40,18 @@ char	*parse_path(char *cmd, char **envp, t_pipex *pipex)
 	return (0);
 }
 
-void	execute_cmd(char *argv, char **envp, t_pipex *pipex)
+void	execute_cmd(char *argv, char **envp)
 {
 	char	**cmd;
 	char	*path;
 
+	if (!argv)
+		error_exit(EXECVE_FAIL, argv);
 	cmd = ft_split(argv, ' ');
 	if (!cmd[0])
 		error_exit(CMD_NOT_FOUND, cmd[0]);
 	if (!ft_strrchr(cmd[0], '/'))
-		path = parse_path(cmd[0], envp, pipex);
+		path = parse_path(cmd[0], envp);
 	else
 	{
 		if (access(cmd[0], F_OK) != 0)
@@ -120,15 +84,13 @@ void	child1_process(char **argv, char **envp, t_pipex *pipex)
 	dup2(fd_in, STDIN_FILENO);
 	close(pipex->fd[1]);
 	close(fd_in);
-	execute_cmd(argv[2], envp, pipex);
+	execute_cmd(argv[2], envp);
 }
 
 void	child2_process(char **argv, char **envp, t_pipex *pipex)
 {
 	int	fd_out;
 
-	if (access(argv[4], W_OK) != 0)
-		error_exit(WRONG_FILE, argv[4]);
 	fd_out = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (fd_out == -1)
 		error_exit(OPEN_FAIL, argv[4]);
@@ -136,15 +98,7 @@ void	child2_process(char **argv, char **envp, t_pipex *pipex)
 	dup2(fd_out, STDOUT_FILENO);
 	close(pipex->fd[0]);
 	close(fd_out);
-	execute_cmd(argv[3], envp, pipex);
-}
-
-void	get_exit_code(t_pipex *pipex)
-{
-	if (WIFEXITED(pipex->status))
-		pipex->exit_code = WEXITSTATUS(pipex->status);
-	else if (WIFSIGNALED(pipex->status))
-		pipex->exit_code = WTERMSIG(pipex->status);
+	execute_cmd(argv[3], envp);
 }
 
 int	main(int argc, char **argv, char **envp)

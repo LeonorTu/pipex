@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:55 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/04 14:22:57 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/04 15:19:47 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,5 +45,14 @@ typedef struct s_pipex
 	pid_t	pid1;
 	pid_t	pid2;
 }	t_pipex;
+
+char	*parse_path(char *cmd, char **envp);
+void	execute_cmd(char *argv, char **envp);
+void	child1_process(char **argv, char **envp, t_pipex *pipex);
+void	child2_process(char **argv, char **envp, t_pipex *pipex);
+
+void	get_exit_code(t_pipex *pipex);
+void	free_arr(char **arr);
+void	error_exit(t_error error, char *s);
 
 #endif
