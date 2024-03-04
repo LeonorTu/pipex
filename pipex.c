@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/01 19:29:36 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/04 14:27:41 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,38 +14,31 @@
 
 void	error_exit(t_error error, char *s)
 {
+	ft_putstr_fd("pipex: ", STDERR_FILENO);
 	if (error == CMD_NOT_FOUND)
 	{
-		ft_printf("zsh: command not found: ");
+		ft_putstr_fd("command not found: ", STDERR_FILENO);
+		if (s)
+			ft_putendl_fd(s, STDERR_FILENO);
+		exit(127);
+	}
+	if (error == NO_PATH)
+	{
+		ft_putstr_fd("No such file or directory: ", STDERR_FILENO);
+		ft_putendl_fd(s, STDERR_FILENO);
 		exit(127);
 	}
 	if (error == EXECVE_FAIL)
 	{
-		ft_printf("zsh: permission denied: %s\n", s);
+		ft_putstr_fd("permission denied: ", STDERR_FILENO);
+		ft_putendl_fd(s, STDERR_FILENO);
 		exit(126);
 	}
-	if (error == OPEN_FAIL)
+	else
 	{
-		ft_printf("Can't open infile");
-		exit(0);
+		perror(s);
+		exit(EXIT_FAILURE);
 	}
-	if (error == NO_INFILE)
-	{
-		ft_printf("zsh: no such file or directory: %s\n", s);
-		exit(0);
-	}
-	if (error == NO_PERMISSION)
-	{
-		ft_printf("zsh: permission denied: %s\n", s);
-		exit(126);
-	}
-	if (error == OUT_FILE)
-	{
-		ft_printf("zsh: permission denied: %s\n", s);
-		exit(1);
-	}
-	perror("Error");
-	exit(EXIT_FAILURE);
 }
 
 void	free_arr(char **arr)
@@ -66,13 +59,13 @@ char	*parse_path(char *cmd, char **envp, t_pipex *pipex)
 	{
 		envp++;
 		if (!*envp)
-			error_exit(CMD_NOT_FOUND, "haha");
+			error_exit(NO_PATH, cmd);
 	}
 	path = ft_split(*envp + 5, ':');
-	i = 0;
+	i = -1;
 	temp = NULL;
 	path_cmd = NULL;
-	while (path[i])
+	while (path[++i])
 	{
 		temp = ft_strjoin(path[i], "/");
 		path_cmd = ft_strjoin(temp, cmd);
@@ -80,17 +73,10 @@ char	*parse_path(char *cmd, char **envp, t_pipex *pipex)
 		if (access(path_cmd, F_OK | X_OK) == 0)
 			return (path_cmd);
 		free(path_cmd);
-		i++;
 	}
 	free_arr(path);
 	return (0);
 }
-
-// void	check_access(char *path_cmd)
-// {
-// 	if (access(path_cmd, F_OK | X_OK) != 0)
-// 		error_exit();
-// }
 
 void	execute_cmd(char *argv, char **envp, t_pipex *pipex)
 {
@@ -104,8 +90,10 @@ void	execute_cmd(char *argv, char **envp, t_pipex *pipex)
 		path = parse_path(cmd[0], envp, pipex);
 	else
 	{
-		if (access(cmd[0], F_OK | X_OK) != 0)
-			error_exit(NO_PERMISSION, cmd[0]);
+		if (access(cmd[0], F_OK) != 0)
+			error_exit(NO_PATH, cmd[0]);
+		if (access(cmd[0], X_OK) != 0)
+			error_exit(EXECVE_FAIL, cmd[0]);
 		path = cmd[0];
 	}
 	if (!path)
@@ -122,12 +110,12 @@ void	child1_process(char **argv, char **envp, t_pipex *pipex)
 	int	fd_in;
 
 	if (access(argv[1], F_OK) != 0)
-		error_exit(NO_INFILE, argv[1]);
+		error_exit(WRONG_FILE, argv[1]);
 	if (access(argv[1], R_OK) != 0)
 		error_exit(NO_PERMISSION, argv[1]);
 	fd_in = open(argv[1], O_RDONLY);
 	if (fd_in == -1)
-		error_exit(OPEN_FAIL, "haha");
+		error_exit(OPEN_FAIL, argv[1]);
 	dup2(pipex->fd[1], STDOUT_FILENO);
 	dup2(fd_in, STDIN_FILENO);
 	close(pipex->fd[1]);
@@ -140,15 +128,23 @@ void	child2_process(char **argv, char **envp, t_pipex *pipex)
 	int	fd_out;
 
 	if (access(argv[4], W_OK) != 0)
-		error_exit(OUT_FILE, argv[4]);
+		error_exit(WRONG_FILE, argv[4]);
 	fd_out = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (fd_out == -1)
-		error_exit(OPEN_FAIL, "haha");
+		error_exit(OPEN_FAIL, argv[4]);
 	dup2(pipex->fd[0], STDIN_FILENO);
 	dup2(fd_out, STDOUT_FILENO);
 	close(pipex->fd[0]);
 	close(fd_out);
 	execute_cmd(argv[3], envp, pipex);
+}
+
+void	get_exit_code(t_pipex *pipex)
+{
+	if (WIFEXITED(pipex->status))
+		pipex->exit_code = WEXITSTATUS(pipex->status);
+	else if (WIFSIGNALED(pipex->status))
+		pipex->exit_code = WTERMSIG(pipex->status);
 }
 
 int	main(int argc, char **argv, char **envp)
@@ -157,36 +153,23 @@ int	main(int argc, char **argv, char **envp)
 
 	pipex = (t_pipex *)ft_calloc(0, sizeof(t_pipex));
 	if (argc != 5)
-		error_exit(WRONG_ARGC, "haha");
+		error_exit(WRONG_ARGC, "Please enter 4 arguments");
 	if (pipe(pipex->fd) == -1)
-		error_exit(PIPE_FAIL, "haha");
+		error_exit(PIPE_FAIL, NULL);
 	pipex->pid1 = fork();
 	if (pipex->pid1 < 0)
-		error_exit(FORK_FAIL, "haha");
+		error_exit(FORK_FAIL, NULL);
 	if (pipex->pid1 == 0)
 		child1_process(argv, envp, pipex);
 	close(pipex->fd[1]);
 	pipex->pid2 = fork();
 	if (pipex->pid2 < 0)
-		error_exit(FORK_FAIL, "haha");
+		error_exit(FORK_FAIL, NULL);
 	if (pipex->pid2 == 0)
 		child2_process(argv, envp, pipex);
 	close(pipex->fd[0]);
 	waitpid(pipex->pid1, NULL, 0);
 	waitpid(pipex->pid2, &(pipex->status), 0);
-	pipex->exit_code = 0;
-	if (WIFEXITED(pipex->status))
-		pipex->exit_code = WEXITSTATUS(pipex->status);
-	else if (WIFSIGNALED(pipex->status))
-		pipex->exit_code = WTERMSIG(pipex->status);
-	// else
-	// 	statuscode = 1;
-	// printf("%d\n", getpid());
-	// printf("%d\n", getppid());
-	while(1)
-	{
-	}
-	// sleep(100000000);
-	// system("leaks pipex"); //
+	get_exit_code(pipex);
 	return (pipex->exit_code);
 }
