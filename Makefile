@@ -2,9 +2,10 @@ NAME = pipex
 
 LIBFT = ./libft/libft.a
 
-SRCS = pipex.c
+SRCS = pipex.c \
+		pipex_utils.c
 
-CFLAGS = -g #-Wall -Wextra -Werror  #delete -g
+CFLAGS = -Wall -Wextra -Werror
 
 all: ${NAME}
 
@@ -17,9 +18,12 @@ $(LIBFT):
 
 clean:
 	@make clean -C libft
+	@rm -rf *.dSYM
+	@rm -rf .vscode
+	@rm -rf .DS_Store
 
 fclean: clean
-	@rm -f ${NAME} ${NAME_BONUS}
+	@rm -f ${NAME}
 	@make fclean -C libft
 	@echo "---------Everything Deleted---------"
 
