@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/04 15:20:02 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/05 15:27:17 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ void	execute_cmd(char *argv, char **envp)
 		error_exit(EXECVE_FAIL, argv);
 	cmd = ft_split(argv, ' ');
 	if (!cmd[0])
-		error_exit(CMD_NOT_FOUND, cmd[0]);
+		error_exit(CMD_NOT_FOUND, NULL);
 	if (!ft_strrchr(cmd[0], '/'))
 		path = parse_path(cmd[0], envp);
 	else
@@ -61,10 +61,7 @@ void	execute_cmd(char *argv, char **envp)
 		path = cmd[0];
 	}
 	if (!path)
-	{
-		free_arr(cmd);
-		error_exit(CMD_NOT_FOUND, cmd[0]);
-	}
+		error_free_exit(cmd);
 	if (execve(path, cmd, envp) == -1)
 		error_exit(EXECVE_FAIL, path);
 }
@@ -91,7 +88,7 @@ void	child2_process(char **argv, char **envp, t_pipex *pipex)
 {
 	int	fd_out;
 
-	fd_out = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
+	fd_out = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd_out == -1)
 		error_exit(OPEN_FAIL, argv[4]);
 	dup2(pipex->fd[0], STDIN_FILENO);
@@ -103,27 +100,27 @@ void	child2_process(char **argv, char **envp, t_pipex *pipex)
 
 int	main(int argc, char **argv, char **envp)
 {
-	t_pipex	*pipex;
+	t_pipex	pipex;
 
-	pipex = (t_pipex *)ft_calloc(0, sizeof(t_pipex));
 	if (argc != 5)
 		error_exit(WRONG_ARGC, "Please enter 4 arguments");
-	if (pipe(pipex->fd) == -1)
+	init_pipex(&pipex);
+	if (pipe(pipex.fd) == -1)
 		error_exit(PIPE_FAIL, NULL);
-	pipex->pid1 = fork();
-	if (pipex->pid1 < 0)
+	pipex.pid1 = fork();
+	if (pipex.pid1 < 0)
 		error_exit(FORK_FAIL, NULL);
-	if (pipex->pid1 == 0)
-		child1_process(argv, envp, pipex);
-	close(pipex->fd[1]);
-	pipex->pid2 = fork();
-	if (pipex->pid2 < 0)
+	if (pipex.pid1 == 0)
+		child1_process(argv, envp, &pipex);
+	close(pipex.fd[1]);
+	pipex.pid2 = fork();
+	if (pipex.pid2 < 0)
 		error_exit(FORK_FAIL, NULL);
-	if (pipex->pid2 == 0)
-		child2_process(argv, envp, pipex);
-	close(pipex->fd[0]);
-	waitpid(pipex->pid1, NULL, 0);
-	waitpid(pipex->pid2, &(pipex->status), 0);
-	get_exit_code(pipex);
-	return (pipex->exit_code);
+	if (pipex.pid2 == 0)
+		child2_process(argv, envp, &pipex);
+	close(pipex.fd[0]);
+	waitpid(pipex.pid1, NULL, 0);
+	waitpid(pipex.pid2, &(pipex.status), 0);
+	get_exit_code(&pipex);
+	return (pipex.exit_code);
 }
