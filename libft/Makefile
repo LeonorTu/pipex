@@ -34,9 +34,13 @@ SRCS = ft_isalpha.c \
 	ft_putstr_fd.c \
 	ft_putendl_fd.c \
 	ft_putnbr_fd.c \
-	get_next_line/get_next_line_bonus.c
+	get_next_line/get_next_line_bonus.c \
+	ft_printf/ft_printf.c \
+	ft_printf/ft_put_function.c \
+	ft_printf/ft_specifier.c \
+	ft_printf/ft_numlen.c
 
-CFLAGS = -Wall -Wextra -Werror -g  #delete -g
+CFLAGS = -Wall -Wextra -Werror
 
 OBJS = ${SRCS:.c=.o}
 
