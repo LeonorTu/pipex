@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/05 15:27:17 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/07 12:23:08 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@ char	*parse_path(char *cmd, char **envp)
 	char	*temp;
 	int		i;
 
+	if (access(cmd, F_OK | X_OK) == 0)
+		return (cmd);
 	while (*envp && !ft_strnstr(*envp, "PATH=", 5))
 		envp++;
 	if (!*envp)
