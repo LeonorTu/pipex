@@ -1,26 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   error_exit.c                                       :+:      :+:    :+:   */
+/*   pipex_utils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/04 15:15:25 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/04 15:16:58 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/08 13:10:41 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "pipex.h"
+#include "../inc/pipex.h"
+
+void	init_pipex(t_pipex *pipex)
+{
+	pipex->fd[0] = 0;
+	pipex->fd[1] = 0;
+	pipex->status = 0;
+	pipex->exit_code = 0;
+	pipex->cmd = NULL;
+	pipex->pid1 = 0;
+	pipex->pid2 = 0;
+}
 
 void	error_exit(t_error error, char *s)
 {
 	ft_putstr_fd("pipex: ", STDERR_FILENO);
 	if (error == CMD_NOT_FOUND)
 	{
-		ft_putstr_fd("command not found: ", STDERR_FILENO);
-		if (!s)
-			s = "\n";
-		ft_putendl_fd(s, STDERR_FILENO);
+		ft_putendl_fd("command not found: ", STDERR_FILENO);
 		exit(127);
 	}
 	if (error == NO_PATH)
@@ -41,6 +49,15 @@ void	error_exit(t_error error, char *s)
 	exit(EXIT_FAILURE);
 }
 
+void	error_free_exit(char **cmd)
+{
+	ft_putstr_fd("pipex: ", STDERR_FILENO);
+	ft_putstr_fd("command not found: ", STDERR_FILENO);
+	ft_putendl_fd(*cmd, STDERR_FILENO);
+	free_arr(cmd);
+	exit(127);
+}
+
 void	get_exit_code(t_pipex *pipex)
 {
 	if (WIFEXITED(pipex->status))
@@ -51,6 +68,10 @@ void	get_exit_code(t_pipex *pipex)
 
 void	free_arr(char **arr)
 {
-	while (*arr)
-		free(*arr++);
+	int	i;
+
+	i = 0;
+	while (arr[i])
+		free(arr[i++]);
+	free(arr);
 }

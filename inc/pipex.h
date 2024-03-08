@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:55 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/05 16:05:17 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/08 13:10:31 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <fcntl.h>
-# include "libft/libft.h"
-# include "libft/ft_printf/ft_printf.h"
+# include "../libft/libft.h"
+# include "../libft/ft_printf/ft_printf.h"
 
 typedef enum s_error
 {

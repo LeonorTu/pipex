@@ -6,11 +6,11 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/07 12:23:08 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/08 13:10:51 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "pipex.h"
+#include "../inc/pipex.h"
 
 char	*parse_path(char *cmd, char **envp)
 {

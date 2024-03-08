@@ -2,8 +2,8 @@ NAME = pipex
 
 LIBFT = ./libft/libft.a
 
-SRCS = pipex.c \
-		pipex_utils.c
+SRCS = src/pipex.c \
+		src/pipex_utils.c
 
 CFLAGS = -Wall -Wextra -Werror
 
