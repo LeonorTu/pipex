@@ -6,7 +6,7 @@
 /*   By: jtu <jtu@student.hive.fi>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/22 16:50:37 by jtu               #+#    #+#             */
-/*   Updated: 2024/03/08 13:10:51 by jtu              ###   ########.fr       */
+/*   Updated: 2024/03/11 13:12:59 by jtu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,10 +72,6 @@ void	child1_process(char **argv, char **envp, t_pipex *pipex)
 {
 	int	fd_in;
 
-	if (access(argv[1], F_OK) != 0)
-		error_exit(WRONG_FILE, argv[1]);
-	if (access(argv[1], R_OK) != 0)
-		error_exit(NO_PERMISSION, argv[1]);
 	fd_in = open(argv[1], O_RDONLY);
 	if (fd_in == -1)
 		error_exit(OPEN_FAIL, argv[1]);
